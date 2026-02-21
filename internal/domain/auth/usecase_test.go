@@ -42,6 +42,10 @@ func (m *mockQuerier) CreatePropertyAd(_ context.Context, _ repo.CreatePropertyA
 	panic("CreatePropertyAd não é esperado em testes de auth")
 }
 
+func (m *mockQuerier) ListPropertyAds(_ context.Context) ([]repo.PropertyAd, error) {
+	panic("ListPropertyAds não é esperado em testes de auth")
+}
+
 var loginTestPasswordHash string
 
 func init() {

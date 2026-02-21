@@ -27,10 +27,15 @@ func (m *mockTxManager) WithTx(ctx context.Context, fn func(q repo.Querier) erro
 
 type mockQuerier struct {
 	createPropertyAdFn func(ctx context.Context, arg repo.CreatePropertyAdParams) (repo.PropertyAd, error)
+	listPropertyAdsFn  func(ctx context.Context) ([]repo.PropertyAd, error)
 }
 
 func (m *mockQuerier) CreatePropertyAd(ctx context.Context, arg repo.CreatePropertyAdParams) (repo.PropertyAd, error) {
 	return m.createPropertyAdFn(ctx, arg)
+}
+
+func (m *mockQuerier) ListPropertyAds(ctx context.Context) ([]repo.PropertyAd, error) {
+	return m.listPropertyAdsFn(ctx)
 }
 
 func (m *mockQuerier) CreateUser(_ context.Context, _ repo.CreateUserParams) (repo.User, error) {
@@ -238,6 +243,94 @@ func TestPropertyAdUsecase_CreatePropertyAd(t *testing.T) {
 			uc := property_ads.NewPropertyAdUsecase(txm)
 
 			out, err := uc.CreatePropertyAd(context.Background(), tc.inputFn())
+
+			if tc.wantErr != nil {
+				if err == nil {
+					t.Fatalf("esperava erro %q, mas não recebeu nenhum", tc.wantErr)
+				}
+				if err.Error() != tc.wantErr.Error() {
+					t.Errorf("erro: esperado %q, recebido %q", tc.wantErr, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("erro inesperado: %v", err)
+			}
+
+			if tc.checkOutput != nil {
+				tc.checkOutput(t, out)
+			}
+		})
+	}
+}
+
+func TestPropertyAdUsecase_ListPropertyAds(t *testing.T) {
+	tests := []struct {
+		name        string
+		querier     *mockQuerier
+		txErr       error
+		wantErr     error
+		checkOutput func(t *testing.T, out []property_ads.PropertyAdItem)
+	}{
+		{
+			name: "sucesso com resultados",
+			querier: &mockQuerier{
+				listPropertyAdsFn: func(_ context.Context) ([]repo.PropertyAd, error) {
+					return []repo.PropertyAd{fixedPropertyAd()}, nil
+				},
+			},
+			checkOutput: func(t *testing.T, out []property_ads.PropertyAdItem) {
+				if len(out) != 1 {
+					t.Fatalf("esperava 1 item, recebeu %d", len(out))
+				}
+				if out[0].ID == uuid.Nil {
+					t.Error("ID do anúncio não deveria ser nulo")
+				}
+				if out[0].PriceBrl != 500000.0 {
+					t.Errorf("price_brl: esperado 500000.0, recebido %f", out[0].PriceBrl)
+				}
+				if out[0].ImagePath == nil {
+					t.Error("image_path não deveria ser nil")
+				}
+			},
+		},
+		{
+			name: "lista vazia",
+			querier: &mockQuerier{
+				listPropertyAdsFn: func(_ context.Context) ([]repo.PropertyAd, error) {
+					return []repo.PropertyAd{}, nil
+				},
+			},
+			checkOutput: func(t *testing.T, out []property_ads.PropertyAdItem) {
+				if len(out) != 0 {
+					t.Errorf("esperava lista vazia, recebeu %d itens", len(out))
+				}
+			},
+		},
+		{
+			name: "erro no repositório",
+			querier: &mockQuerier{
+				listPropertyAdsFn: func(_ context.Context) ([]repo.PropertyAd, error) {
+					return nil, errors.New("falha na consulta ao banco")
+				},
+			},
+			wantErr: errors.New("falha na consulta ao banco"),
+		},
+		{
+			name:    "erro ao iniciar transação",
+			querier: &mockQuerier{},
+			txErr:   errors.New("pool de conexões esgotado"),
+			wantErr: errors.New("pool de conexões esgotado"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			txm := &mockTxManager{q: tc.querier, txErr: tc.txErr}
+			uc := property_ads.NewPropertyAdUsecase(txm)
+
+			out, err := uc.ListPropertyAds(context.Background())
 
 			if tc.wantErr != nil {
 				if err == nil {

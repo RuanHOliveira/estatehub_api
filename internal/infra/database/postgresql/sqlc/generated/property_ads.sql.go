@@ -13,10 +13,20 @@ import (
 )
 
 const createPropertyAd = `-- name: CreatePropertyAd :one
-INSERT INTO property_ads (
-    user_id, type, price_brl, image_path,
-    zip_code, street, number, neighborhood, city, state, complement
-)
+INSERT INTO 
+    property_ads (
+        user_id, 
+        type, 
+        price_brl, 
+        image_path,
+        zip_code, 
+        street, 
+        number, 
+        neighborhood, 
+        city, 
+        state, 
+        complement
+    )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 RETURNING id, user_id, type, price_brl, image_path, zip_code, street, number, neighborhood, city, state, complement, created_at, updated_at, deleted_at
 `
@@ -68,4 +78,47 @@ func (q *Queries) CreatePropertyAd(ctx context.Context, arg CreatePropertyAdPara
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const listPropertyAds = `-- name: ListPropertyAds :many
+SELECT id, user_id, type, price_brl, image_path, zip_code, street, number, neighborhood, city, state, complement, created_at, updated_at, deleted_at
+FROM property_ads
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListPropertyAds(ctx context.Context) ([]PropertyAd, error) {
+	rows, err := q.db.Query(ctx, listPropertyAds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PropertyAd{}
+	for rows.Next() {
+		var i PropertyAd
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Type,
+			&i.PriceBrl,
+			&i.ImagePath,
+			&i.ZipCode,
+			&i.Street,
+			&i.Number,
+			&i.Neighborhood,
+			&i.City,
+			&i.State,
+			&i.Complement,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

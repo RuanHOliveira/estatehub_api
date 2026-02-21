@@ -1,6 +1,7 @@
 package property_ads
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
@@ -154,4 +155,35 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 	}
 
 	corejson.Write(w, http.StatusCreated, output)
+}
+
+func (h *PropertyAdHandler) ListPropertyAds(w http.ResponseWriter, r *http.Request) {
+	ads, err := h.u.ListPropertyAds(r.Context())
+	if err != nil {
+		log.Println(err)
+		corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+		return
+	}
+
+	if ads == nil {
+		ads = []PropertyAdItem{}
+	}
+
+	for i, ad := range ads {
+		if ad.ImagePath == nil {
+			continue
+		}
+
+		filePath := filepath.Join(h.uploadDir, filepath.Base(*ad.ImagePath))
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		contentType := http.DetectContentType(data)
+		encoded := "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(data)
+		ads[i].ImageData = &encoded
+	}
+
+	corejson.Write(w, http.StatusOK, ads)
 }

@@ -50,12 +50,13 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 		r.Route("/property-ads", func(r chi.Router) {
 			r.Use(middlewares.AuthMiddleware(*cfg.JwtService))
 
+			r.Get("/", cfg.PropertyAdsHandler.ListPropertyAds)
 			r.Post("/", cfg.PropertyAdsHandler.CreatePropertyAd)
 		})
 	})
 
-	fileServer := http.FileServer(http.Dir("./uploads"))
-	r.Handle("/uploads/*", http.StripPrefix("/uploads", fileServer))
+	fileServer := http.FileServer(http.Dir("./internal/domain/property_ads/uploads"))
+	r.Handle("/uploads/property_ads/*", http.StripPrefix("/uploads/property_ads", fileServer))
 
 	return r
 }

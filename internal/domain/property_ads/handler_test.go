@@ -21,10 +21,15 @@ import (
 
 type mockPropertyAdUsecase struct {
 	createFn func(ctx context.Context, input *property_ads.CreatePropertyAdInput) (*property_ads.CreatePropertyAdOutput, error)
+	listFn   func(ctx context.Context) ([]property_ads.PropertyAdItem, error)
 }
 
 func (m *mockPropertyAdUsecase) CreatePropertyAd(ctx context.Context, input *property_ads.CreatePropertyAdInput) (*property_ads.CreatePropertyAdOutput, error) {
 	return m.createFn(ctx, input)
+}
+
+func (m *mockPropertyAdUsecase) ListPropertyAds(ctx context.Context) ([]property_ads.PropertyAdItem, error) {
+	return m.listFn(ctx)
 }
 
 func validFields() map[string]string {
@@ -243,6 +248,113 @@ func TestPropertyAdHandler_CreatePropertyAd(t *testing.T) {
 				tc.checkResponse(t, bytes.NewBuffer(bodyBytes), uploadDir)
 			}
 
+		})
+	}
+}
+
+func TestPropertyAdHandler_ListPropertyAds(t *testing.T) {
+	fixedID := uuid.New()
+	fixedImagePath := "/uploads/property_ads/foto.jpg"
+
+	tests := []struct {
+		name          string
+		listFn        func(ctx context.Context) ([]property_ads.PropertyAdItem, error)
+		wantStatus    int
+		wantErrorCode string
+		checkResponse func(t *testing.T, body *bytes.Buffer)
+	}{
+		{
+			name: "sucesso com resultados",
+			listFn: func(_ context.Context) ([]property_ads.PropertyAdItem, error) {
+				return []property_ads.PropertyAdItem{
+					{
+						ID:        fixedID,
+						UserID:    testutil.FixedUserID,
+						Type:      "SALE",
+						PriceBrl:  450000.00,
+						ImagePath: &fixedImagePath,
+						ZipCode:   "01310-100",
+						Street:    "Av. Paulista",
+						Number:    "1000",
+						City:      "São Paulo",
+						State:     "SP",
+					},
+				}, nil
+			},
+			wantStatus: http.StatusOK,
+			checkResponse: func(t *testing.T, body *bytes.Buffer) {
+				var out []property_ads.PropertyAdItem
+				if err := json.NewDecoder(body).Decode(&out); err != nil {
+					t.Fatalf("erro ao decodificar resposta: %v", err)
+				}
+				if len(out) != 1 {
+					t.Fatalf("esperava 1 item, recebeu %d", len(out))
+				}
+				if out[0].ID != fixedID {
+					t.Errorf("id: esperado %v, recebido %v", fixedID, out[0].ID)
+				}
+				if out[0].Type != "SALE" {
+					t.Errorf("type: esperado %q, recebido %q", "SALE", out[0].Type)
+				}
+				if out[0].PriceBrl != 450000.00 {
+					t.Errorf("price_brl: esperado 450000.00, recebido %f", out[0].PriceBrl)
+				}
+				if out[0].ImagePath == nil || *out[0].ImagePath != fixedImagePath {
+					t.Errorf("image_path: esperado %q", fixedImagePath)
+				}
+			},
+		},
+		{
+			name: "sucesso lista vazia",
+			listFn: func(_ context.Context) ([]property_ads.PropertyAdItem, error) {
+				return nil, nil
+			},
+			wantStatus: http.StatusOK,
+			checkResponse: func(t *testing.T, body *bytes.Buffer) {
+				var raw json.RawMessage
+				if err := json.NewDecoder(body).Decode(&raw); err != nil {
+					t.Fatalf("erro ao decodificar resposta: %v", err)
+				}
+				if string(raw) != "[]" {
+					t.Errorf("esperava [], recebeu %s", string(raw))
+				}
+			},
+		},
+		{
+			name: "erro do usecase",
+			listFn: func(_ context.Context) ([]property_ads.PropertyAdItem, error) {
+				return nil, errors.New("falha inesperada no banco")
+			},
+			wantStatus:    http.StatusInternalServerError,
+			wantErrorCode: coreerrors.ErrUnknown.Error(),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mock := &mockPropertyAdUsecase{listFn: tc.listFn}
+			handler := property_ads.NewPropertyAdHandler(mock, t.TempDir())
+
+			req := httptest.NewRequest(http.MethodGet, "/v1/property-ads", nil)
+			rec := httptest.NewRecorder()
+			handler.ListPropertyAds(rec, req)
+
+			if rec.Code != tc.wantStatus {
+				t.Errorf("status: esperado %d, recebido %d", tc.wantStatus, rec.Code)
+			}
+
+			if tc.wantErrorCode != "" {
+				errResp := testutil.DecodeErrorResponse(t, rec.Body)
+				if errResp.ErrorCode != tc.wantErrorCode {
+					t.Errorf("error_code: esperado %q, recebido %q", tc.wantErrorCode, errResp.ErrorCode)
+				}
+				return
+			}
+
+			if tc.checkResponse != nil {
+				bodyBytes := rec.Body.Bytes()
+				tc.checkResponse(t, bytes.NewBuffer(bodyBytes))
+			}
 		})
 	}
 }

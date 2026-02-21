@@ -1,6 +1,10 @@
 package property_ads
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CreatePropertyAdRequest struct {
 	Type         string
@@ -41,4 +45,22 @@ type CreatePropertyAdOutput struct {
 	City         string    `json:"city"`
 	State        string    `json:"state"`
 	Complement   *string   `json:"complement"`
+}
+
+type PropertyAdItem struct {
+	ID           uuid.UUID `json:"id"`
+	UserID       uuid.UUID `json:"user_id"`
+	Type         string    `json:"type"`
+	PriceBrl     float64   `json:"price_brl"`
+	ImagePath    *string   `json:"image_path"`
+	ImageData    *string   `json:"image_data"`
+	ZipCode      string    `json:"zip_code"`
+	Street       string    `json:"street"`
+	Number       string    `json:"number"`
+	Neighborhood string    `json:"neighborhood"`
+	City         string    `json:"city"`
+	State        string    `json:"state"`
+	Complement   *string   `json:"complement"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
