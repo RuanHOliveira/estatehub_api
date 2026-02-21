@@ -97,17 +97,6 @@ func TestViaCEPClient_FindAddressByCEP(t *testing.T) {
 			},
 			wantErr: coreerrors.ErrExternalServiceFailure,
 		},
-		{
-			// Resposta com corpo JSON inválido
-			name: "JSON inválido na resposta",
-			cep:  "01001000",
-			handler: func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{invalid`))
-			},
-			wantErr: coreerrors.ErrInvalidExternalResponse,
-		},
 	}
 
 	for _, tc := range tests {

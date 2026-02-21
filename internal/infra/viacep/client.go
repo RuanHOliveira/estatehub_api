@@ -75,6 +75,10 @@ func (c *httpViaCEPClient) FindAddressByCEP(ctx context.Context, cep string) (Vi
 		return ViaCEPAddress{}, errors.ErrCEPNotFound
 	}
 
+	if viaCEP.Erro {
+		return ViaCEPAddress{}, errors.ErrCEPNotFound
+	}
+
 	return ViaCEPAddress{
 		ZipCode:      viaCEP.CEP,
 		Street:       viaCEP.Logradouro,

@@ -20,4 +20,11 @@ var (
 	ErrExternalServiceFailure  = errors.New("ErrExternalServiceFailure")  // Falha ao se comunicar com serviço externo
 	ErrInvalidExternalResponse = errors.New("ErrInvalidExternalResponse") // Resposta do serviço externo não pôde ser interpretada
 	ErrExternalBadRequest      = errors.New("ErrExternalBadRequest")      // Serviço externo rejeitou a requisição (400)
+
+	// PropertyAds
+	ErrInvalidAdType       = errors.New("ErrInvalidAdType")       // Tipo inválido (não SALE/RENT)
+	ErrInvalidPrice        = errors.New("ErrInvalidPrice")        // Preço inválido (deve ser > 0)
+	ErrMissingAddressField = errors.New("ErrMissingAddressField") // Campo de endereço obrigatório ausente
+	ErrInvalidImageType    = errors.New("ErrInvalidImageType")    // Tipo de imagem inválido (só JPEG/PNG)
+	ErrImageTooLarge       = errors.New("ErrImageTooLarge")       // Imagem excede 5MB
 )

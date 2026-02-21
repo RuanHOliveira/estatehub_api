@@ -38,6 +38,10 @@ func (m *mockQuerier) CreateUser(ctx context.Context, arg repo.CreateUserParams)
 	return m.createUserFn(ctx, arg)
 }
 
+func (m *mockQuerier) CreatePropertyAd(_ context.Context, _ repo.CreatePropertyAdParams) (repo.PropertyAd, error) {
+	panic("CreatePropertyAd não é esperado em testes de auth")
+}
+
 var loginTestPasswordHash string
 
 func init() {

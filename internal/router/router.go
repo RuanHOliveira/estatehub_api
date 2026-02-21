@@ -7,15 +7,17 @@ import (
 	"github.com/RuanHOliveira/estatehub_api/internal/core/middlewares"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/security"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/auth"
+	property_ads "github.com/RuanHOliveira/estatehub_api/internal/domain/property_ads"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/viacep"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 type RouterConfig struct {
-	JwtService    *security.JwtService
-	AuthHandler   *auth.AuthHandler
-	ViaCEPHandler *viacep.ViaCEPHandler
+	JwtService         *security.JwtService
+	AuthHandler        *auth.AuthHandler
+	ViaCEPHandler      *viacep.ViaCEPHandler
+	PropertyAdsHandler *property_ads.PropertyAdHandler
 }
 
 func NewRouter(cfg RouterConfig) *chi.Mux {
@@ -43,7 +45,17 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 
 			r.Get("/{cep}", cfg.ViaCEPHandler.FindAddress)
 		})
+
+		// PropertyAds
+		r.Route("/property-ads", func(r chi.Router) {
+			r.Use(middlewares.AuthMiddleware(*cfg.JwtService))
+
+			r.Post("/", cfg.PropertyAdsHandler.CreatePropertyAd)
+		})
 	})
+
+	fileServer := http.FileServer(http.Dir("./uploads"))
+	r.Handle("/uploads/*", http.StripPrefix("/uploads", fileServer))
 
 	return r
 }

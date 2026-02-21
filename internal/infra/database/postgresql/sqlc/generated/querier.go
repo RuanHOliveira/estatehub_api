@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CreatePropertyAd(ctx context.Context, arg CreatePropertyAdParams) (PropertyAd, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	FindUserByEmail(ctx context.Context, email string) (User, error)
 }
