@@ -4,15 +4,18 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/RuanHOliveira/estatehub_api/internal/core/middlewares"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/security"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/auth"
+	"github.com/RuanHOliveira/estatehub_api/internal/domain/viacep"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 type RouterConfig struct {
-	JwtService  *security.JwtService
-	AuthHandler *auth.AuthHandler
+	JwtService    *security.JwtService
+	AuthHandler   *auth.AuthHandler
+	ViaCEPHandler *viacep.ViaCEPHandler
 }
 
 func NewRouter(cfg RouterConfig) *chi.Mux {
@@ -32,6 +35,13 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", cfg.AuthHandler.Register)
 			r.Post("/login", cfg.AuthHandler.Login)
+		})
+
+		// ViaCEP
+		r.Route("/viacep", func(r chi.Router) {
+			r.Use(middlewares.AuthMiddleware(*cfg.JwtService))
+
+			r.Get("/{cep}", cfg.ViaCEPHandler.FindAddress)
 		})
 	})
 

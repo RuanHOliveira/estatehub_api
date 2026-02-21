@@ -8,8 +8,10 @@ import (
 	"github.com/RuanHOliveira/estatehub_api/internal/core/config"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/security"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/auth"
+	viacephandler "github.com/RuanHOliveira/estatehub_api/internal/domain/viacep"
 	"github.com/RuanHOliveira/estatehub_api/internal/infra/database/postgresql"
 	repo "github.com/RuanHOliveira/estatehub_api/internal/infra/database/postgresql/sqlc/generated"
+	"github.com/RuanHOliveira/estatehub_api/internal/infra/viacep"
 	"github.com/RuanHOliveira/estatehub_api/internal/router"
 )
 
@@ -22,6 +24,9 @@ func main() {
 	// Instância JwtService
 	jwtService := security.NewJwtService(cfg.AuthConfig)
 
+	// Instância Clients
+	viaCEPClient := viacep.NewViaCEPClient()
+
 	// Instância Repositories
 	queries := repo.New(conn)
 
@@ -33,11 +38,13 @@ func main() {
 
 	// Instância Handlers
 	authHandler := auth.NewAuthHandler(authUC)
+	viaCEPH := viacephandler.NewViaCEPHandler(viaCEPClient)
 
 	// Criar router
 	r := router.NewRouter(router.RouterConfig{
-		JwtService:  &jwtService,
-		AuthHandler: authHandler,
+		JwtService:    &jwtService,
+		AuthHandler:   authHandler,
+		ViaCEPHandler: viaCEPH,
 	})
 
 	http.ListenAndServe(fmt.Sprintf(":%d", cfg.AppConfig.AppPort), r)

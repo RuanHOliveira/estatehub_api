@@ -2,7 +2,7 @@ services:
   test:
     build: .
     container_name: estatehub_test
-    command: go test ./internal/domain/...
+    command: go test ./internal/...
     volumes:
       - .:/app
     env_file: ".env"
