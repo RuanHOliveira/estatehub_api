@@ -1,0 +1,49 @@
+services:
+  api:
+    build: .
+    container_name: estatehub_api
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    volumes:
+      - .:/app
+      - /app/tmp
+    env_file: ".env"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: estatehub_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASS}
+      POSTGRES_DB: ${PG_NAME}
+    ports:
+      - "${PG_PORT}:${PG_PORT}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_NAME}" ]
+      interval: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate
+    entrypoint: ["migrate"]
+    command:
+      - "-path=/migrations"
+      - "-database"
+      - "postgres://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_NAME}?sslmode=disable"
+      - "up"
+    volumes:
+      - ${MIGRATION_DIR}:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

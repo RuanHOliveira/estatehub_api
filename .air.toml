@@ -1,0 +1,29 @@
+root = "."
+tmp_dir = "tmp"
+
+include_ext = ["go", "mod", "sum"]
+exclude_dir = ["tmp", "bin", "vendor", "migrations"]
+
+delay = 500
+
+[color]
+enable = true
+
+[log]
+time = true
+
+[runner]
+watch_delay = 500
+kill_signal = "kill"
+kill_delay = 1500
+graceful_kill = false
+cmd_delay = 1000
+
+[build]
+cmd = "go build -o tmp/main cmd/api/main.go"
+bin = "tmp/main"
+full_bin = "tmp/main"
+delay = 500
+kill_delay = 1500
+exclude_dir = ["tmp", "bin", "vendor", "migrations"]
+include_ext = ["go", "mod", "sum"]
