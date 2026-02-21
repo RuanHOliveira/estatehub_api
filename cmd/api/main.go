@@ -23,10 +23,13 @@ func main() {
 	jwtService := security.NewJwtService(cfg.AuthConfig)
 
 	// Instância Repositories
-	repo := repo.New(conn)
+	queries := repo.New(conn)
+
+	// Instância TxManager
+	txm := postgresql.NewPgTxManager(queries, conn)
 
 	// Instância Usecases
-	authUC := auth.NewAuthUsecase(repo, conn, cfg.AuthConfig, jwtService)
+	authUC := auth.NewAuthUsecase(txm, jwtService)
 
 	// Instância Handlers
 	authHandler := auth.NewAuthHandler(authUC)

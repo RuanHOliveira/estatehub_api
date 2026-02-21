@@ -1,4 +1,12 @@
 services:
+  test:
+    build: .
+    container_name: estatehub_test
+    command: go test ./internal/domain/...
+    volumes:
+      - .:/app
+    env_file: ".env"
+
   api:
     build: .
     container_name: estatehub_api
@@ -12,6 +20,8 @@ services:
       postgres:
         condition: service_healthy
       migrate:
+        condition: service_completed_successfully
+      test:
         condition: service_completed_successfully
 
   postgres:
@@ -44,6 +54,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      test:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:
