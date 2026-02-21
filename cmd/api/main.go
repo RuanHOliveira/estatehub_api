@@ -6,9 +6,11 @@ import (
 	"net/http"
 
 	"github.com/RuanHOliveira/estatehub_api/internal/core/config"
+	"github.com/RuanHOliveira/estatehub_api/internal/core/security"
+	"github.com/RuanHOliveira/estatehub_api/internal/domain/auth"
 	"github.com/RuanHOliveira/estatehub_api/internal/infra/database/postgresql"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	repo "github.com/RuanHOliveira/estatehub_api/internal/infra/database/postgresql/sqlc/generated"
+	"github.com/RuanHOliveira/estatehub_api/internal/router"
 )
 
 func main() {
@@ -17,10 +19,22 @@ func main() {
 	conn := postgresql.Connect(ctx, cfg.PgConfig)
 	defer conn.Close(ctx)
 
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("API Online"))
+	// Instância JwtService
+	jwtService := security.NewJwtService(cfg.AuthConfig)
+
+	// Instância Repositories
+	repo := repo.New(conn)
+
+	// Instância Usecases
+	authUC := auth.NewAuthUsecase(repo, conn, cfg.AuthConfig, jwtService)
+
+	// Instância Handlers
+	authHandler := auth.NewAuthHandler(authUC)
+
+	// Criar router
+	r := router.NewRouter(router.RouterConfig{
+		JwtService:  &jwtService,
+		AuthHandler: authHandler,
 	})
 
 	http.ListenAndServe(fmt.Sprintf(":%d", cfg.AppConfig.AppPort), r)
