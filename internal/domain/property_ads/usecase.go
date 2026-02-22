@@ -112,6 +112,8 @@ func (u *uc) CreatePropertyAd(ctx context.Context, input *CreatePropertyAdInput)
 			City:         ad.City,
 			State:        ad.State,
 			Complement:   ad.Complement,
+			CreatedAt:    ad.CreatedAt.Time,
+			UpdatedAt:    ad.UpdatedAt.Time,
 		}
 		return nil
 	})
