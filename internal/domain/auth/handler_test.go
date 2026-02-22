@@ -157,7 +157,7 @@ func TestLoginHandler(t *testing.T) {
 			loginFn: func(_ context.Context, _ *auth.LoginInput) (*auth.LoginOutput, error) {
 				return successOutput, nil
 			},
-			wantStatus: http.StatusCreated,
+			wantStatus: http.StatusOK,
 			wantToken:  true,
 		},
 		{

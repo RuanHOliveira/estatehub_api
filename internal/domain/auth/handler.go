@@ -64,5 +64,5 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.Write(w, http.StatusCreated, LoginResponse{User: output.User, AccessToken: output.AccessToken})
+	json.Write(w, http.StatusOK, LoginResponse{User: output.User, AccessToken: output.AccessToken})
 }
