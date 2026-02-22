@@ -6,16 +6,20 @@ package repo
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
 	CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (ExchangeRate, error)
 	CreatePropertyAd(ctx context.Context, arg CreatePropertyAdParams) (PropertyAd, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteExchangeRates(ctx context.Context) error
 	FindUserByEmail(ctx context.Context, email string) (User, error)
+	GetActiveExchangeRate(ctx context.Context) (ExchangeRate, error)
 	ListAllExchangeRates(ctx context.Context) ([]ExchangeRate, error)
 	ListPropertyAds(ctx context.Context) ([]PropertyAd, error)
+	SoftDeleteAllExchangeRates(ctx context.Context) error
+	SoftDeletePropertyAd(ctx context.Context, id uuid.UUID) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)

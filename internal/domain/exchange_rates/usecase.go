@@ -41,7 +41,7 @@ func (u *uc) CreateExchangeRate(ctx context.Context, input *CreateExchangeRateIn
 		}
 
 		// 'Inativa' todas as cotações cadastradas
-		_ = q.DeleteExchangeRates(ctx)
+		_ = q.SoftDeleteAllExchangeRates(ctx)
 
 		er, err := q.CreateExchangeRate(ctx, repo.CreateExchangeRateParams{UserID: input.UserID, TargetCurrency: input.TargetCurrency, Rate: rate})
 		if err != nil {

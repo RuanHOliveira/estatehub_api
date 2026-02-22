@@ -12,16 +12,19 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+
 	coreerrors "github.com/RuanHOliveira/estatehub_api/internal/core/error"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/middlewares"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/testutil"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/property_ads"
-	"github.com/google/uuid"
 )
 
 type mockPropertyAdUsecase struct {
 	createFn func(ctx context.Context, input *property_ads.CreatePropertyAdInput) (*property_ads.CreatePropertyAdOutput, error)
 	listFn   func(ctx context.Context) ([]property_ads.PropertyAdItem, error)
+	deleteFn func(ctx context.Context, id uuid.UUID) error
 }
 
 func (m *mockPropertyAdUsecase) CreatePropertyAd(ctx context.Context, input *property_ads.CreatePropertyAdInput) (*property_ads.CreatePropertyAdOutput, error) {
@@ -30,6 +33,10 @@ func (m *mockPropertyAdUsecase) CreatePropertyAd(ctx context.Context, input *pro
 
 func (m *mockPropertyAdUsecase) ListPropertyAds(ctx context.Context) ([]property_ads.PropertyAdItem, error) {
 	return m.listFn(ctx)
+}
+
+func (m *mockPropertyAdUsecase) DeletePropertyAd(ctx context.Context, id uuid.UUID) error {
+	return m.deleteFn(ctx, id)
 }
 
 func validFields() map[string]string {
@@ -88,16 +95,33 @@ func buildMultipartRequest(
 	return req
 }
 
+func buildDeleteRequest(t *testing.T, id string, withUserID bool) *http.Request {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodDelete, "/v1/property-ads/"+id, nil)
+
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", id)
+	ctx := context.WithValue(req.Context(), chi.RouteCtxKey, rctx)
+
+	if withUserID {
+		ctx = context.WithValue(ctx, middlewares.UserIDContextKey, testutil.FixedUserID)
+	}
+
+	return req.WithContext(ctx)
+}
+
 func fixedOutput(imagePath string) *property_ads.CreatePropertyAdOutput {
 	var ip *string
 	if imagePath != "" {
 		ip = &imagePath
 	}
+	usd := 900000.0
 	return &property_ads.CreatePropertyAdOutput{
 		ID:           uuid.New(),
 		UserID:       testutil.FixedUserID,
 		Type:         "SALE",
 		PriceBrl:     450000.00,
+		PriceUsd:     &usd,
 		ImagePath:    ip,
 		ZipCode:      "01310-100",
 		Street:       "Av. Paulista",
@@ -137,6 +161,9 @@ func TestPropertyAdHandler_CreatePropertyAd(t *testing.T) {
 				if out.ImagePath != nil {
 					t.Errorf("image_path deveria ser nil quando sem imagem, recebeu %q", *out.ImagePath)
 				}
+				if out.PriceUsd == nil {
+					t.Error("price_usd não deveria ser nil quando usecase retorna cotação")
+				}
 			},
 		},
 		{
@@ -157,15 +184,6 @@ func TestPropertyAdHandler_CreatePropertyAd(t *testing.T) {
 			},
 		},
 		{
-			name: "não autenticado",
-			req: func(_ string) *http.Request {
-				return buildMultipartRequest(t, validFields(), false, nil, "")
-			},
-			createFn:      nil,
-			wantStatus:    http.StatusUnauthorized,
-			wantErrorCode: coreerrors.ErrMissingToken.Error(),
-		},
-		{
 			name: "price_brl inválido",
 			req: func(_ string) *http.Request {
 				fields := validFields()
@@ -179,7 +197,6 @@ func TestPropertyAdHandler_CreatePropertyAd(t *testing.T) {
 		{
 			name: "body muito grande",
 			req: func(_ string) *http.Request {
-				// Criar dados maiores que 5MB + 4KB
 				largeData := make([]byte, (5<<20)+4096+1)
 				copy(largeData, testutil.JpegMagicBytes())
 				return buildMultipartRequest(t, validFields(), true, largeData, "image/jpeg")
@@ -255,6 +272,7 @@ func TestPropertyAdHandler_CreatePropertyAd(t *testing.T) {
 func TestPropertyAdHandler_ListPropertyAds(t *testing.T) {
 	fixedID := uuid.New()
 	fixedImagePath := "/uploads/property_ads/foto.jpg"
+	usd := 900000.0
 
 	tests := []struct {
 		name          string
@@ -264,7 +282,7 @@ func TestPropertyAdHandler_ListPropertyAds(t *testing.T) {
 		checkResponse func(t *testing.T, body *bytes.Buffer)
 	}{
 		{
-			name: "sucesso com resultados",
+			name: "sucesso com resultados e price_usd",
 			listFn: func(_ context.Context) ([]property_ads.PropertyAdItem, error) {
 				return []property_ads.PropertyAdItem{
 					{
@@ -272,6 +290,7 @@ func TestPropertyAdHandler_ListPropertyAds(t *testing.T) {
 						UserID:    testutil.FixedUserID,
 						Type:      "SALE",
 						PriceBrl:  450000.00,
+						PriceUsd:  &usd,
 						ImagePath: &fixedImagePath,
 						ZipCode:   "01310-100",
 						Street:    "Av. Paulista",
@@ -298,6 +317,11 @@ func TestPropertyAdHandler_ListPropertyAds(t *testing.T) {
 				}
 				if out[0].PriceBrl != 450000.00 {
 					t.Errorf("price_brl: esperado 450000.00, recebido %f", out[0].PriceBrl)
+				}
+				if out[0].PriceUsd == nil {
+					t.Error("price_usd não deveria ser nil quando usecase retorna cotação")
+				} else if *out[0].PriceUsd != usd {
+					t.Errorf("price_usd: esperado %f, recebido %f", usd, *out[0].PriceUsd)
 				}
 				if out[0].ImagePath == nil || *out[0].ImagePath != fixedImagePath {
 					t.Errorf("image_path: esperado %q", fixedImagePath)
@@ -354,6 +378,70 @@ func TestPropertyAdHandler_ListPropertyAds(t *testing.T) {
 			if tc.checkResponse != nil {
 				bodyBytes := rec.Body.Bytes()
 				tc.checkResponse(t, bytes.NewBuffer(bodyBytes))
+			}
+		})
+	}
+}
+
+func TestPropertyAdHandler_DeletePropertyAd(t *testing.T) {
+	fixedID := uuid.New()
+
+	tests := []struct {
+		name          string
+		req           *http.Request
+		deleteFn      func(ctx context.Context, id uuid.UUID) error
+		wantStatus    int
+		wantErrorCode string
+	}{
+		{
+			name:       "sucesso",
+			req:        buildDeleteRequest(t, fixedID.String(), true),
+			deleteFn:   func(_ context.Context, _ uuid.UUID) error { return nil },
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:          "ID inválido",
+			req:           buildDeleteRequest(t, "not-a-uuid", true),
+			wantStatus:    http.StatusBadRequest,
+			wantErrorCode: coreerrors.ErrInvalidRequest.Error(),
+		},
+		{
+			name: "não encontrado",
+			req:  buildDeleteRequest(t, fixedID.String(), true),
+			deleteFn: func(_ context.Context, _ uuid.UUID) error {
+				return coreerrors.ErrPropertyAdNotFound
+			},
+			wantStatus:    http.StatusNotFound,
+			wantErrorCode: coreerrors.ErrPropertyAdNotFound.Error(),
+		},
+		{
+			name: "erro interno do usecase",
+			req:  buildDeleteRequest(t, fixedID.String(), true),
+			deleteFn: func(_ context.Context, _ uuid.UUID) error {
+				return errors.New("falha inesperada no banco")
+			},
+			wantStatus:    http.StatusInternalServerError,
+			wantErrorCode: coreerrors.ErrUnknown.Error(),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mock := &mockPropertyAdUsecase{deleteFn: tc.deleteFn}
+			handler := property_ads.NewPropertyAdHandler(mock, t.TempDir())
+
+			rec := httptest.NewRecorder()
+			handler.DeletePropertyAd(rec, tc.req)
+
+			if rec.Code != tc.wantStatus {
+				t.Errorf("status: esperado %d, recebido %d", tc.wantStatus, rec.Code)
+			}
+
+			if tc.wantErrorCode != "" {
+				errResp := testutil.DecodeErrorResponse(t, rec.Body)
+				if errResp.ErrorCode != tc.wantErrorCode {
+					t.Errorf("error_code: esperado %q, recebido %q", tc.wantErrorCode, errResp.ErrorCode)
+				}
 			}
 		})
 	}

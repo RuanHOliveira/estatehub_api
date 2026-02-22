@@ -122,3 +122,17 @@ func (q *Queries) ListPropertyAds(ctx context.Context) ([]PropertyAd, error) {
 	}
 	return items, nil
 }
+
+const softDeletePropertyAd = `-- name: SoftDeletePropertyAd :execrows
+UPDATE property_ads
+SET deleted_at = now(), updated_at = now()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) SoftDeletePropertyAd(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, softDeletePropertyAd, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

@@ -54,8 +54,16 @@ func (m *mockQuerier) ListAllExchangeRates(ctx context.Context) ([]repo.Exchange
 	panic("ListAllExchangeRates não é esperado em testes de auth")
 }
 
-func (m *mockQuerier) DeleteExchangeRates(_ context.Context) error {
-	panic("DeleteExchangeRates não é esperado em testes de property_ads")
+func (m *mockQuerier) SoftDeleteAllExchangeRates(_ context.Context) error {
+	panic("SoftDeleteAllExchangeRates não é esperado em testes de auth")
+}
+
+func (m *mockQuerier) GetActiveExchangeRate(_ context.Context) (repo.ExchangeRate, error) {
+	panic("GetActiveExchangeRate não é esperado em testes de auth")
+}
+
+func (m *mockQuerier) SoftDeletePropertyAd(_ context.Context, _ uuid.UUID) (int64, error) {
+	panic("SoftDeletePropertyAd não é esperado em testes de auth")
 }
 
 var loginTestPasswordHash string

@@ -21,3 +21,8 @@ SELECT id, user_id, type, price_brl, image_path, zip_code, street, number, neigh
 FROM property_ads
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC;
+
+-- name: SoftDeletePropertyAd :execrows
+UPDATE property_ads
+SET deleted_at = now(), updated_at = now()
+WHERE id = $1 AND deleted_at IS NULL;

@@ -54,6 +54,7 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 
 			r.Get("/", cfg.PropertyAdsHandler.ListPropertyAds)
 			r.Post("/", cfg.PropertyAdsHandler.CreatePropertyAd)
+			r.Delete("/{id}", cfg.PropertyAdsHandler.DeletePropertyAd)
 		})
 
 		// ExchangeRates

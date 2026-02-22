@@ -37,7 +37,9 @@ type CreatePropertyAdOutput struct {
 	UserID       uuid.UUID `json:"user_id"`
 	Type         string    `json:"type"`
 	PriceBrl     float64   `json:"price_brl"`
+	PriceUsd     *float64  `json:"price_usd"`
 	ImagePath    *string   `json:"image_path"`
+	ImageData    *string   `json:"image_data"`
 	ZipCode      string    `json:"zip_code"`
 	Street       string    `json:"street"`
 	Number       string    `json:"number"`
@@ -52,6 +54,7 @@ type PropertyAdItem struct {
 	UserID       uuid.UUID `json:"user_id"`
 	Type         string    `json:"type"`
 	PriceBrl     float64   `json:"price_brl"`
+	PriceUsd     *float64  `json:"price_usd"`
 	ImagePath    *string   `json:"image_path"`
 	ImageData    *string   `json:"image_data"`
 	ZipCode      string    `json:"zip_code"`

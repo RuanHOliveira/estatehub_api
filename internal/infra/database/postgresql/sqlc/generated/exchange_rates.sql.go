@@ -37,13 +37,27 @@ func (q *Queries) CreateExchangeRate(ctx context.Context, arg CreateExchangeRate
 	return i, err
 }
 
-const deleteExchangeRates = `-- name: DeleteExchangeRates :exec
-UPDATE exchange_rates SET deleted_at = NOW(), updated_at = NOW() WHERE deleted_at IS NULL
+const getActiveExchangeRate = `-- name: GetActiveExchangeRate :one
+SELECT id, user_id, target_currency, rate, created_at, updated_at, deleted_at
+FROM exchange_rates
+WHERE deleted_at IS NULL
+ORDER BY created_at DESC
+LIMIT 1
 `
 
-func (q *Queries) DeleteExchangeRates(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, deleteExchangeRates)
-	return err
+func (q *Queries) GetActiveExchangeRate(ctx context.Context) (ExchangeRate, error) {
+	row := q.db.QueryRow(ctx, getActiveExchangeRate)
+	var i ExchangeRate
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TargetCurrency,
+		&i.Rate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const listAllExchangeRates = `-- name: ListAllExchangeRates :many
@@ -76,4 +90,13 @@ func (q *Queries) ListAllExchangeRates(ctx context.Context) ([]ExchangeRate, err
 		return nil, err
 	}
 	return items, nil
+}
+
+const softDeleteAllExchangeRates = `-- name: SoftDeleteAllExchangeRates :exec
+UPDATE exchange_rates SET deleted_at = NOW(), updated_at = NOW() WHERE deleted_at IS NULL
+`
+
+func (q *Queries) SoftDeleteAllExchangeRates(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, softDeleteAllExchangeRates)
+	return err
 }

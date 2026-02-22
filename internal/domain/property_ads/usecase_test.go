@@ -26,8 +26,10 @@ func (m *mockTxManager) WithTx(ctx context.Context, fn func(q repo.Querier) erro
 }
 
 type mockQuerier struct {
-	createPropertyAdFn func(ctx context.Context, arg repo.CreatePropertyAdParams) (repo.PropertyAd, error)
-	listPropertyAdsFn  func(ctx context.Context) ([]repo.PropertyAd, error)
+	createPropertyAdFn      func(ctx context.Context, arg repo.CreatePropertyAdParams) (repo.PropertyAd, error)
+	listPropertyAdsFn       func(ctx context.Context) ([]repo.PropertyAd, error)
+	getActiveExchangeRateFn func(ctx context.Context) (repo.ExchangeRate, error)
+	softDeletePropertyAdFn  func(ctx context.Context, id uuid.UUID) (int64, error)
 }
 
 func (m *mockQuerier) CreatePropertyAd(ctx context.Context, arg repo.CreatePropertyAdParams) (repo.PropertyAd, error) {
@@ -36,6 +38,17 @@ func (m *mockQuerier) CreatePropertyAd(ctx context.Context, arg repo.CreatePrope
 
 func (m *mockQuerier) ListPropertyAds(ctx context.Context) ([]repo.PropertyAd, error) {
 	return m.listPropertyAdsFn(ctx)
+}
+
+func (m *mockQuerier) GetActiveExchangeRate(ctx context.Context) (repo.ExchangeRate, error) {
+	if m.getActiveExchangeRateFn != nil {
+		return m.getActiveExchangeRateFn(ctx)
+	}
+	return repo.ExchangeRate{}, errors.New("sem cotação ativa")
+}
+
+func (m *mockQuerier) SoftDeletePropertyAd(ctx context.Context, id uuid.UUID) (int64, error) {
+	return m.softDeletePropertyAdFn(ctx, id)
 }
 
 func (m *mockQuerier) CreateUser(_ context.Context, _ repo.CreateUserParams) (repo.User, error) {
@@ -54,8 +67,8 @@ func (m *mockQuerier) ListAllExchangeRates(ctx context.Context) ([]repo.Exchange
 	panic("ListAllExchangeRates não é esperado em testes de property_ads")
 }
 
-func (m *mockQuerier) DeleteExchangeRates(_ context.Context) error {
-	panic("DeleteExchangeRates não é esperado em testes de property_ads")
+func (m *mockQuerier) SoftDeleteAllExchangeRates(_ context.Context) error {
+	panic("SoftDeleteAllExchangeRates não é esperado em testes de property_ads")
 }
 
 func validInput() *property_ads.CreatePropertyAdInput {
@@ -92,6 +105,17 @@ func fixedPropertyAd() repo.PropertyAd {
 	}
 }
 
+func fixedExchangeRate() repo.ExchangeRate {
+	var rate pgtype.Numeric
+	rate.Scan("5.00")
+	return repo.ExchangeRate{
+		ID:             uuid.New(),
+		UserID:         testutil.FixedUserID,
+		TargetCurrency: "USD",
+		Rate:           rate,
+	}
+}
+
 func TestPropertyAdUsecase_CreatePropertyAd(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -102,11 +126,14 @@ func TestPropertyAdUsecase_CreatePropertyAd(t *testing.T) {
 		checkOutput func(t *testing.T, out *property_ads.CreatePropertyAdOutput)
 	}{
 		{
-			name:    "sucesso",
+			name:    "sucesso com cotação ativa",
 			inputFn: validInput,
 			querier: &mockQuerier{
 				createPropertyAdFn: func(_ context.Context, _ repo.CreatePropertyAdParams) (repo.PropertyAd, error) {
 					return fixedPropertyAd(), nil
+				},
+				getActiveExchangeRateFn: func(_ context.Context) (repo.ExchangeRate, error) {
+					return fixedExchangeRate(), nil
 				},
 			},
 			checkOutput: func(t *testing.T, out *property_ads.CreatePropertyAdOutput) {
@@ -118,6 +145,28 @@ func TestPropertyAdUsecase_CreatePropertyAd(t *testing.T) {
 				}
 				if out.ImagePath == nil {
 					t.Error("image_path não deveria ser nil")
+				}
+				if out.PriceUsd == nil {
+					t.Error("price_usd não deveria ser nil quando há cotação ativa")
+				} else if *out.PriceUsd != 500000.00*5.00 {
+					t.Errorf("price_usd: esperado %f, recebido %f", 500000.00*5.00, *out.PriceUsd)
+				}
+			},
+		},
+		{
+			name:    "sucesso sem cotação ativa",
+			inputFn: validInput,
+			querier: &mockQuerier{
+				createPropertyAdFn: func(_ context.Context, _ repo.CreatePropertyAdParams) (repo.PropertyAd, error) {
+					return fixedPropertyAd(), nil
+				},
+			},
+			checkOutput: func(t *testing.T, out *property_ads.CreatePropertyAdOutput) {
+				if out == nil {
+					t.Fatal("output não deveria ser nil")
+				}
+				if out.PriceUsd != nil {
+					t.Errorf("price_usd deveria ser nil quando não há cotação ativa, recebeu %f", *out.PriceUsd)
 				}
 			},
 		},
@@ -286,10 +335,13 @@ func TestPropertyAdUsecase_ListPropertyAds(t *testing.T) {
 		checkOutput func(t *testing.T, out []property_ads.PropertyAdItem)
 	}{
 		{
-			name: "sucesso com resultados",
+			name: "sucesso com cotação ativa",
 			querier: &mockQuerier{
 				listPropertyAdsFn: func(_ context.Context) ([]repo.PropertyAd, error) {
 					return []repo.PropertyAd{fixedPropertyAd()}, nil
+				},
+				getActiveExchangeRateFn: func(_ context.Context) (repo.ExchangeRate, error) {
+					return fixedExchangeRate(), nil
 				},
 			},
 			checkOutput: func(t *testing.T, out []property_ads.PropertyAdItem) {
@@ -304,6 +356,27 @@ func TestPropertyAdUsecase_ListPropertyAds(t *testing.T) {
 				}
 				if out[0].ImagePath == nil {
 					t.Error("image_path não deveria ser nil")
+				}
+				if out[0].PriceUsd == nil {
+					t.Error("price_usd não deveria ser nil quando há cotação ativa")
+				} else if *out[0].PriceUsd != 500000.0*5.00 {
+					t.Errorf("price_usd: esperado %f, recebido %f", 500000.0*5.00, *out[0].PriceUsd)
+				}
+			},
+		},
+		{
+			name: "sucesso sem cotação ativa",
+			querier: &mockQuerier{
+				listPropertyAdsFn: func(_ context.Context) ([]repo.PropertyAd, error) {
+					return []repo.PropertyAd{fixedPropertyAd()}, nil
+				},
+			},
+			checkOutput: func(t *testing.T, out []property_ads.PropertyAdItem) {
+				if len(out) != 1 {
+					t.Fatalf("esperava 1 item, recebeu %d", len(out))
+				}
+				if out[0].PriceUsd != nil {
+					t.Errorf("price_usd deveria ser nil quando não há cotação ativa, recebeu %f", *out[0].PriceUsd)
 				}
 			},
 		},
@@ -360,6 +433,78 @@ func TestPropertyAdUsecase_ListPropertyAds(t *testing.T) {
 
 			if tc.checkOutput != nil {
 				tc.checkOutput(t, out)
+			}
+		})
+	}
+}
+
+func TestPropertyAdUsecase_DeletePropertyAd(t *testing.T) {
+	fixedID := uuid.New()
+
+	tests := []struct {
+		name    string
+		id      uuid.UUID
+		querier *mockQuerier
+		txErr   error
+		wantErr error
+	}{
+		{
+			name: "sucesso",
+			id:   fixedID,
+			querier: &mockQuerier{
+				softDeletePropertyAdFn: func(_ context.Context, _ uuid.UUID) (int64, error) {
+					return 1, nil
+				},
+			},
+		},
+		{
+			name: "não encontrado ou já deletado",
+			id:   fixedID,
+			querier: &mockQuerier{
+				softDeletePropertyAdFn: func(_ context.Context, _ uuid.UUID) (int64, error) {
+					return 0, nil
+				},
+			},
+			wantErr: coreerrors.ErrPropertyAdNotFound,
+		},
+		{
+			name: "erro no repositório",
+			id:   fixedID,
+			querier: &mockQuerier{
+				softDeletePropertyAdFn: func(_ context.Context, _ uuid.UUID) (int64, error) {
+					return 0, errors.New("falha ao executar update no banco")
+				},
+			},
+			wantErr: errors.New("falha ao executar update no banco"),
+		},
+		{
+			name:    "erro ao iniciar transação",
+			id:      fixedID,
+			querier: &mockQuerier{},
+			txErr:   errors.New("pool de conexões esgotado"),
+			wantErr: errors.New("pool de conexões esgotado"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			txm := &mockTxManager{q: tc.querier, txErr: tc.txErr}
+			uc := property_ads.NewPropertyAdUsecase(txm)
+
+			err := uc.DeletePropertyAd(context.Background(), tc.id)
+
+			if tc.wantErr != nil {
+				if err == nil {
+					t.Fatalf("esperava erro %q, mas não recebeu nenhum", tc.wantErr)
+				}
+				if err.Error() != tc.wantErr.Error() {
+					t.Errorf("erro: esperado %q, recebido %q", tc.wantErr, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("erro inesperado: %v", err)
 			}
 		})
 	}

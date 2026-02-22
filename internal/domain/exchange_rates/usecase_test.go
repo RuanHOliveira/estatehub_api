@@ -40,7 +40,7 @@ func (m *mockQuerier) ListAllExchangeRates(ctx context.Context) ([]repo.Exchange
 	return m.listAllExchangeRatesFn(ctx)
 }
 
-func (m *mockQuerier) DeleteExchangeRates(ctx context.Context) error {
+func (m *mockQuerier) SoftDeleteAllExchangeRates(ctx context.Context) error {
 	if m.deleteExchangeRatesFn != nil {
 		return m.deleteExchangeRatesFn(ctx)
 	}
@@ -61,6 +61,14 @@ func (m *mockQuerier) CreateUser(_ context.Context, _ repo.CreateUserParams) (re
 
 func (m *mockQuerier) FindUserByEmail(_ context.Context, _ string) (repo.User, error) {
 	panic("FindUserByEmail não é esperado em testes de exchange_rates")
+}
+
+func (m *mockQuerier) GetActiveExchangeRate(_ context.Context) (repo.ExchangeRate, error) {
+	panic("GetActiveExchangeRate não é esperado em testes de exchange_rates")
+}
+
+func (m *mockQuerier) SoftDeletePropertyAd(_ context.Context, _ uuid.UUID) (int64, error) {
+	panic("SoftDeletePropertyAd não é esperado em testes de exchange_rates")
 }
 
 func validInput() *exchange_rates.CreateExchangeRateInput {
