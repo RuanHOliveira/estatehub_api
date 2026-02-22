@@ -47,6 +47,8 @@ type CreatePropertyAdOutput struct {
 	City         string    `json:"city"`
 	State        string    `json:"state"`
 	Complement   *string   `json:"complement"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type PropertyAdItem struct {
