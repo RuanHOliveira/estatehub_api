@@ -46,6 +46,18 @@ func (m *mockQuerier) FindUserByEmail(_ context.Context, _ string) (repo.User, e
 	panic("FindUserByEmail não é esperado em testes de property_ads")
 }
 
+func (m *mockQuerier) CreateExchangeRate(_ context.Context, _ repo.CreateExchangeRateParams) (repo.ExchangeRate, error) {
+	panic("CreateExchangeRate não é esperado em testes de property_ads")
+}
+
+func (m *mockQuerier) ListAllExchangeRates(ctx context.Context) ([]repo.ExchangeRate, error) {
+	panic("ListAllExchangeRates não é esperado em testes de property_ads")
+}
+
+func (m *mockQuerier) DeleteExchangeRates(_ context.Context) error {
+	panic("DeleteExchangeRates não é esperado em testes de property_ads")
+}
+
 func validInput() *property_ads.CreatePropertyAdInput {
 	return &property_ads.CreatePropertyAdInput{
 		UserID:       testutil.FixedUserID,
@@ -82,11 +94,11 @@ func fixedPropertyAd() repo.PropertyAd {
 
 func TestPropertyAdUsecase_CreatePropertyAd(t *testing.T) {
 	tests := []struct {
-		name       string
-		inputFn    func() *property_ads.CreatePropertyAdInput
-		querier    *mockQuerier
-		txErr      error
-		wantErr    error
+		name        string
+		inputFn     func() *property_ads.CreatePropertyAdInput
+		querier     *mockQuerier
+		txErr       error
+		wantErr     error
 		checkOutput func(t *testing.T, out *property_ads.CreatePropertyAdOutput)
 	}{
 		{

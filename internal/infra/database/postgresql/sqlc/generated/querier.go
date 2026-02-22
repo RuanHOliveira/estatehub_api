@@ -9,9 +9,12 @@ import (
 )
 
 type Querier interface {
+	CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (ExchangeRate, error)
 	CreatePropertyAd(ctx context.Context, arg CreatePropertyAdParams) (PropertyAd, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteExchangeRates(ctx context.Context) error
 	FindUserByEmail(ctx context.Context, email string) (User, error)
+	ListAllExchangeRates(ctx context.Context) ([]ExchangeRate, error)
 	ListPropertyAds(ctx context.Context) ([]PropertyAd, error)
 }
 

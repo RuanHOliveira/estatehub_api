@@ -11,6 +11,7 @@ import (
 
 type ExchangeRate struct {
 	ID             uuid.UUID          `json:"id"`
+	UserID         uuid.UUID          `json:"user_id"`
 	TargetCurrency string             `json:"target_currency"`
 	Rate           pgtype.Numeric     `json:"rate"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`

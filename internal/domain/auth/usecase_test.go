@@ -46,6 +46,18 @@ func (m *mockQuerier) ListPropertyAds(_ context.Context) ([]repo.PropertyAd, err
 	panic("ListPropertyAds não é esperado em testes de auth")
 }
 
+func (m *mockQuerier) CreateExchangeRate(_ context.Context, _ repo.CreateExchangeRateParams) (repo.ExchangeRate, error) {
+	panic("CreateExchangeRate não é esperado em testes de auth")
+}
+
+func (m *mockQuerier) ListAllExchangeRates(ctx context.Context) ([]repo.ExchangeRate, error) {
+	panic("ListAllExchangeRates não é esperado em testes de auth")
+}
+
+func (m *mockQuerier) DeleteExchangeRates(_ context.Context) error {
+	panic("DeleteExchangeRates não é esperado em testes de property_ads")
+}
+
 var loginTestPasswordHash string
 
 func init() {

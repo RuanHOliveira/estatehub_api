@@ -8,6 +8,7 @@ import (
 	"github.com/RuanHOliveira/estatehub_api/internal/core/config"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/security"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/auth"
+	exchange_rates "github.com/RuanHOliveira/estatehub_api/internal/domain/exchange_rates"
 	property_ads "github.com/RuanHOliveira/estatehub_api/internal/domain/property_ads"
 	viacephandler "github.com/RuanHOliveira/estatehub_api/internal/domain/viacep"
 	"github.com/RuanHOliveira/estatehub_api/internal/infra/database/postgresql"
@@ -37,18 +38,21 @@ func main() {
 	// Instância Usecases
 	authUC := auth.NewAuthUsecase(txm, jwtService)
 	propertyAdUC := property_ads.NewPropertyAdUsecase(txm)
+	exchangeRateUC := exchange_rates.NewExchangeRateUsecase(txm)
 
 	// Instância Handlers
 	authHandler := auth.NewAuthHandler(authUC)
 	viaCEPHandler := viacephandler.NewViaCEPHandler(viaCEPClient)
 	propertyAdHandler := property_ads.NewPropertyAdHandler(propertyAdUC, "internal/domain/property_ads/uploads")
+	exchangeRateHandler := exchange_rates.NewExchangeRateHandler(exchangeRateUC)
 
 	// Criar router
 	r := router.NewRouter(router.RouterConfig{
-		JwtService:         &jwtService,
-		AuthHandler:        authHandler,
-		ViaCEPHandler:      viaCEPHandler,
-		PropertyAdsHandler: propertyAdHandler,
+		JwtService:           &jwtService,
+		AuthHandler:          authHandler,
+		ViaCEPHandler:        viaCEPHandler,
+		PropertyAdsHandler:   propertyAdHandler,
+		ExchangeRatesHandler: exchangeRateHandler,
 	})
 
 	http.ListenAndServe(fmt.Sprintf(":%d", cfg.AppConfig.AppPort), r)

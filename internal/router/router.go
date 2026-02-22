@@ -7,6 +7,7 @@ import (
 	"github.com/RuanHOliveira/estatehub_api/internal/core/middlewares"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/security"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/auth"
+	"github.com/RuanHOliveira/estatehub_api/internal/domain/exchange_rates"
 	property_ads "github.com/RuanHOliveira/estatehub_api/internal/domain/property_ads"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/viacep"
 	"github.com/go-chi/chi/v5"
@@ -14,10 +15,11 @@ import (
 )
 
 type RouterConfig struct {
-	JwtService         *security.JwtService
-	AuthHandler        *auth.AuthHandler
-	ViaCEPHandler      *viacep.ViaCEPHandler
-	PropertyAdsHandler *property_ads.PropertyAdHandler
+	JwtService           *security.JwtService
+	AuthHandler          *auth.AuthHandler
+	ViaCEPHandler        *viacep.ViaCEPHandler
+	PropertyAdsHandler   *property_ads.PropertyAdHandler
+	ExchangeRatesHandler *exchange_rates.ExchangeRateHandler
 }
 
 func NewRouter(cfg RouterConfig) *chi.Mux {
@@ -52,6 +54,14 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 
 			r.Get("/", cfg.PropertyAdsHandler.ListPropertyAds)
 			r.Post("/", cfg.PropertyAdsHandler.CreatePropertyAd)
+		})
+
+		// ExchangeRates
+		r.Route("/exchange-rates", func(r chi.Router) {
+			r.Use(middlewares.AuthMiddleware(*cfg.JwtService))
+
+			r.Get("/", cfg.ExchangeRatesHandler.ListAllExchangeRates)
+			r.Post("/", cfg.ExchangeRatesHandler.CreateExchangeRate)
 		})
 	})
 

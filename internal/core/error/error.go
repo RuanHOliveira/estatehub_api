@@ -27,4 +27,7 @@ var (
 	ErrMissingAddressField = errors.New("ErrMissingAddressField") // Campo de endereço obrigatório ausente
 	ErrInvalidImageType    = errors.New("ErrInvalidImageType")    // Tipo de imagem inválido (só JPEG/PNG)
 	ErrImageTooLarge       = errors.New("ErrImageTooLarge")       // Imagem excede 5MB
+
+	// ExchangeRates
+	ErrInvalidRate = errors.New("ErrInvalidRate") // Taxa de câmbio inválida (deve ser > 0)
 )

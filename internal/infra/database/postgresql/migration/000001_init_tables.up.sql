@@ -12,6 +12,7 @@ CREATE TABLE users (
 
 CREATE TABLE exchange_rates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id),
     target_currency VARCHAR(3) NOT NULL,
     rate NUMERIC(15,6) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
