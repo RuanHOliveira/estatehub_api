@@ -190,7 +190,7 @@ As imagens são armazenadas localmente no servidor. As respostas da API incluem 
 
 ---
 
-## 📘 Documentação Swagger
+## Documentação Swagger
 
 A API possui documentação interativa gerada via [swaggo/swag](https://github.com/swaggo/swag).
 
