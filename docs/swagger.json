@@ -1,0 +1,824 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API REST para gerenciamento de anúncios imobiliários com autenticação JWT, upload de imagens e integração com ViaCEP.",
+        "title": "EstateHub API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/v1",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Valida credenciais e retorna o token JWT de acesso",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Autenticar usuário",
+                "parameters": [
+                    {
+                        "description": "Credenciais de login",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Cria uma nova conta e retorna o token JWT de acesso",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Registrar novo usuário",
+                "parameters": [
+                    {
+                        "description": "Dados de registro",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/auth.RegisterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/exchange-rates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna o histórico completo de cotações, incluindo inativas (deleted_at != null). A cotação ativa possui deleted_at nulo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exchange-rates"
+                ],
+                "summary": "Listar cotações de câmbio",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/exchange_rates.ExchangeRateItem"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra nova cotação BRL→USD. Inativa automaticamente todas as cotações anteriores.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exchange-rates"
+                ],
+                "summary": "Criar cotação de câmbio",
+                "parameters": [
+                    {
+                        "description": "Dados da cotação",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/exchange_rates.CreateExchangeRateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/exchange_rates.CreateExchangeRateOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Verifica se a API está online",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "API Online!",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/property-ads": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna todos os anúncios ativos (soft delete não incluído). price_usd é nulo se não houver cotação ativa.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "property-ads"
+                ],
+                "summary": "Listar anúncios imobiliários",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/property_ads.PropertyAdItem"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cria um novo anúncio com upload opcional de imagem (JPEG/PNG, máx 5MB)",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "property-ads"
+                ],
+                "summary": "Criar anúncio imobiliário",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tipo do anúncio: SALE ou RENT",
+                        "name": "type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "Preço em BRL (deve ser \u003e 0)",
+                        "name": "price_brl",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "CEP (8 dígitos)",
+                        "name": "zip_code",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Logradouro",
+                        "name": "street",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Número",
+                        "name": "number",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bairro",
+                        "name": "neighborhood",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cidade",
+                        "name": "city",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Estado (UF, 2 letras)",
+                        "name": "state",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Complemento",
+                        "name": "complement",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Imagem do imóvel (JPEG ou PNG, máx 5MB)",
+                        "name": "image",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/property_ads.CreatePropertyAdOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/property-ads/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Realiza soft delete do anúncio. Não remove o registro fisicamente do banco.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "property-ads"
+                ],
+                "summary": "Deletar anúncio imobiliário",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "UUID do anúncio",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/viacep/{cep}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Busca informações de endereço via serviço ViaCEP. O CEP deve ter exatamente 8 dígitos numéricos, sem hífen.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "viacep"
+                ],
+                "summary": "Consultar endereço por CEP",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"01310100\"",
+                        "description": "CEP (8 dígitos numéricos, sem hífen)",
+                        "name": "cep",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/viacep.AddressResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/json.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "auth.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "usuario@email.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "senha123"
+                }
+            }
+        },
+        "auth.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMCJ9.abc"
+                },
+                "user": {
+                    "$ref": "#/definitions/auth.UserOutput"
+                }
+            }
+        },
+        "auth.RegisterRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "usuario@email.com"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "João Silva"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "senha123"
+                }
+            }
+        },
+        "auth.RegisterResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMCJ9.abc"
+                },
+                "user": {
+                    "$ref": "#/definitions/auth.UserOutput"
+                }
+            }
+        },
+        "auth.UserOutput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "usuario@email.com"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "João Silva"
+                }
+            }
+        },
+        "exchange_rates.CreateExchangeRateOutput": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 0.181818
+                },
+                "target_currency": {
+                    "type": "string",
+                    "example": "USD"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                }
+            }
+        },
+        "exchange_rates.CreateExchangeRateRequest": {
+            "type": "object",
+            "properties": {
+                "rate": {
+                    "type": "string",
+                    "example": "0.181818"
+                },
+                "target_currency": {
+                    "type": "string",
+                    "example": "USD"
+                }
+            }
+        },
+        "exchange_rates.ExchangeRateItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "rate": {
+                    "type": "number",
+                    "example": 0.181818
+                },
+                "target_currency": {
+                    "type": "string",
+                    "example": "USD"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                }
+            }
+        },
+        "json.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error_code": {
+                    "type": "string",
+                    "example": "ErrUnknown"
+                }
+            }
+        },
+        "property_ads.CreatePropertyAdOutput": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "example": "São Paulo"
+                },
+                "complement": {
+                    "type": "string",
+                    "example": "Apto 42"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "image_data": {
+                    "type": "string",
+                    "example": "data:image/jpeg;base64,/9j/4AAQ..."
+                },
+                "image_path": {
+                    "type": "string",
+                    "example": "/uploads/property_ads/abc123.jpg"
+                },
+                "neighborhood": {
+                    "type": "string",
+                    "example": "Bela Vista"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "1000"
+                },
+                "price_brl": {
+                    "type": "number",
+                    "example": 450000
+                },
+                "price_usd": {
+                    "type": "number",
+                    "example": 81600
+                },
+                "state": {
+                    "type": "string",
+                    "example": "SP"
+                },
+                "street": {
+                    "type": "string",
+                    "example": "Avenida Paulista"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "SALE"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "zip_code": {
+                    "type": "string",
+                    "example": "01310100"
+                }
+            }
+        },
+        "property_ads.PropertyAdItem": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "example": "São Paulo"
+                },
+                "complement": {
+                    "type": "string",
+                    "example": "Apto 42"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "image_data": {
+                    "type": "string",
+                    "example": "data:image/jpeg;base64,/9j/4AAQ..."
+                },
+                "image_path": {
+                    "type": "string",
+                    "example": "/uploads/property_ads/abc123.jpg"
+                },
+                "neighborhood": {
+                    "type": "string",
+                    "example": "Bela Vista"
+                },
+                "number": {
+                    "type": "string",
+                    "example": "1000"
+                },
+                "price_brl": {
+                    "type": "number",
+                    "example": 2500
+                },
+                "price_usd": {
+                    "type": "number",
+                    "example": 454.5
+                },
+                "state": {
+                    "type": "string",
+                    "example": "SP"
+                },
+                "street": {
+                    "type": "string",
+                    "example": "Avenida Paulista"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "RENT"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "zip_code": {
+                    "type": "string",
+                    "example": "01310100"
+                }
+            }
+        },
+        "viacep.AddressResponse": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "example": "São Paulo"
+                },
+                "complement": {
+                    "type": "string",
+                    "example": ""
+                },
+                "neighborhood": {
+                    "type": "string",
+                    "example": "Bela Vista"
+                },
+                "state": {
+                    "type": "string",
+                    "example": "SP"
+                },
+                "street": {
+                    "type": "string",
+                    "example": "Avenida Paulista"
+                },
+                "zip_code": {
+                    "type": "string",
+                    "example": "01310100"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Use o token retornado por /auth/login ou /auth/register. Formato: Bearer \u003ctoken\u003e",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

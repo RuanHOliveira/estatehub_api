@@ -1,0 +1,564 @@
+basePath: /v1
+definitions:
+  auth.LoginRequest:
+    properties:
+      email:
+        example: usuario@email.com
+        type: string
+      password:
+        example: senha123
+        type: string
+    type: object
+  auth.LoginResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMCJ9.abc
+        type: string
+      user:
+        $ref: '#/definitions/auth.UserOutput'
+    type: object
+  auth.RegisterRequest:
+    properties:
+      email:
+        example: usuario@email.com
+        type: string
+      name:
+        example: João Silva
+        type: string
+      password:
+        example: senha123
+        type: string
+    type: object
+  auth.RegisterResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMCJ9.abc
+        type: string
+      user:
+        $ref: '#/definitions/auth.UserOutput'
+    type: object
+  auth.UserOutput:
+    properties:
+      email:
+        example: usuario@email.com
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: João Silva
+        type: string
+    type: object
+  exchange_rates.CreateExchangeRateOutput:
+    properties:
+      created_at:
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      rate:
+        example: 0.181818
+        type: number
+      target_currency:
+        example: USD
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+    type: object
+  exchange_rates.CreateExchangeRateRequest:
+    properties:
+      rate:
+        example: "0.181818"
+        type: string
+      target_currency:
+        example: USD
+        type: string
+    type: object
+  exchange_rates.ExchangeRateItem:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      rate:
+        example: 0.181818
+        type: number
+      target_currency:
+        example: USD
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+    type: object
+  json.ErrorResponse:
+    properties:
+      error_code:
+        example: ErrUnknown
+        type: string
+    type: object
+  property_ads.CreatePropertyAdOutput:
+    properties:
+      city:
+        example: São Paulo
+        type: string
+      complement:
+        example: Apto 42
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      image_data:
+        example: data:image/jpeg;base64,/9j/4AAQ...
+        type: string
+      image_path:
+        example: /uploads/property_ads/abc123.jpg
+        type: string
+      neighborhood:
+        example: Bela Vista
+        type: string
+      number:
+        example: "1000"
+        type: string
+      price_brl:
+        example: 450000
+        type: number
+      price_usd:
+        example: 81600
+        type: number
+      state:
+        example: SP
+        type: string
+      street:
+        example: Avenida Paulista
+        type: string
+      type:
+        example: SALE
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      zip_code:
+        example: "01310100"
+        type: string
+    type: object
+  property_ads.PropertyAdItem:
+    properties:
+      city:
+        example: São Paulo
+        type: string
+      complement:
+        example: Apto 42
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      image_data:
+        example: data:image/jpeg;base64,/9j/4AAQ...
+        type: string
+      image_path:
+        example: /uploads/property_ads/abc123.jpg
+        type: string
+      neighborhood:
+        example: Bela Vista
+        type: string
+      number:
+        example: "1000"
+        type: string
+      price_brl:
+        example: 2500
+        type: number
+      price_usd:
+        example: 454.5
+        type: number
+      state:
+        example: SP
+        type: string
+      street:
+        example: Avenida Paulista
+        type: string
+      type:
+        example: RENT
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      zip_code:
+        example: "01310100"
+        type: string
+    type: object
+  viacep.AddressResponse:
+    properties:
+      city:
+        example: São Paulo
+        type: string
+      complement:
+        example: ""
+        type: string
+      neighborhood:
+        example: Bela Vista
+        type: string
+      state:
+        example: SP
+        type: string
+      street:
+        example: Avenida Paulista
+        type: string
+      zip_code:
+        example: "01310100"
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API REST para gerenciamento de anúncios imobiliários com autenticação
+    JWT, upload de imagens e integração com ViaCEP.
+  title: EstateHub API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Valida credenciais e retorna o token JWT de acesso
+      parameters:
+      - description: Credenciais de login
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+      summary: Autenticar usuário
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova conta e retorna o token JWT de acesso
+      parameters:
+      - description: Dados de registro
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/auth.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+      summary: Registrar novo usuário
+      tags:
+      - auth
+  /exchange-rates:
+    get:
+      description: Retorna o histórico completo de cotações, incluindo inativas (deleted_at
+        != null). A cotação ativa possui deleted_at nulo.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/exchange_rates.ExchangeRateItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar cotações de câmbio
+      tags:
+      - exchange-rates
+    post:
+      consumes:
+      - application/json
+      description: Registra nova cotação BRL→USD. Inativa automaticamente todas as
+        cotações anteriores.
+      parameters:
+      - description: Dados da cotação
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/exchange_rates.CreateExchangeRateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/exchange_rates.CreateExchangeRateOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar cotação de câmbio
+      tags:
+      - exchange-rates
+  /health:
+    get:
+      description: Verifica se a API está online
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: API Online!
+          schema:
+            type: string
+      summary: Health check
+      tags:
+      - health
+  /property-ads:
+    get:
+      description: Retorna todos os anúncios ativos (soft delete não incluído). price_usd
+        é nulo se não houver cotação ativa.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/property_ads.PropertyAdItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar anúncios imobiliários
+      tags:
+      - property-ads
+    post:
+      consumes:
+      - multipart/form-data
+      description: Cria um novo anúncio com upload opcional de imagem (JPEG/PNG, máx
+        5MB)
+      parameters:
+      - description: 'Tipo do anúncio: SALE ou RENT'
+        in: formData
+        name: type
+        required: true
+        type: string
+      - description: Preço em BRL (deve ser > 0)
+        in: formData
+        name: price_brl
+        required: true
+        type: number
+      - description: CEP (8 dígitos)
+        in: formData
+        name: zip_code
+        required: true
+        type: string
+      - description: Logradouro
+        in: formData
+        name: street
+        required: true
+        type: string
+      - description: Número
+        in: formData
+        name: number
+        required: true
+        type: string
+      - description: Bairro
+        in: formData
+        name: neighborhood
+        required: true
+        type: string
+      - description: Cidade
+        in: formData
+        name: city
+        required: true
+        type: string
+      - description: Estado (UF, 2 letras)
+        in: formData
+        name: state
+        required: true
+        type: string
+      - description: Complemento
+        in: formData
+        name: complement
+        type: string
+      - description: Imagem do imóvel (JPEG ou PNG, máx 5MB)
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/property_ads.CreatePropertyAdOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar anúncio imobiliário
+      tags:
+      - property-ads
+  /property-ads/{id}:
+    delete:
+      description: Realiza soft delete do anúncio. Não remove o registro fisicamente
+        do banco.
+      parameters:
+      - description: UUID do anúncio
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar anúncio imobiliário
+      tags:
+      - property-ads
+  /viacep/{cep}:
+    get:
+      description: Busca informações de endereço via serviço ViaCEP. O CEP deve ter
+        exatamente 8 dígitos numéricos, sem hífen.
+      parameters:
+      - description: CEP (8 dígitos numéricos, sem hífen)
+        example: '"01310100"'
+        in: path
+        name: cep
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/viacep.AddressResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/json.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Consultar endereço por CEP
+      tags:
+      - viacep
+securityDefinitions:
+  BearerAuth:
+    description: 'Use o token retornado por /auth/login ou /auth/register. Formato:
+      Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

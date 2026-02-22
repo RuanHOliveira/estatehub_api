@@ -12,6 +12,7 @@ import (
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/viacep"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type RouterConfig struct {
@@ -31,10 +32,12 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("API Online!"))
-		})
+		r.Get("/health", healthHandler)
 
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", cfg.AuthHandler.Register)
@@ -70,4 +73,15 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 	r.Handle("/uploads/property_ads/*", http.StripPrefix("/uploads/property_ads", fileServer))
 
 	return r
+}
+
+// healthHandler godoc
+// @Summary      Health check
+// @Description  Verifica se a API está online
+// @Tags         health
+// @Produce      plain
+// @Success      200 {string} string "API Online!"
+// @Router       /health [get]
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("API Online!"))
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 
 	coreerrors "github.com/RuanHOliveira/estatehub_api/internal/core/error"
-	corejson "github.com/RuanHOliveira/estatehub_api/internal/core/json"
+	"github.com/RuanHOliveira/estatehub_api/internal/core/json"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/middlewares"
 )
 
@@ -29,10 +29,32 @@ func NewPropertyAdHandler(u PropertyAdUsecase, uploadDir string) *PropertyAdHand
 	return &PropertyAdHandler{u: u, uploadDir: uploadDir}
 }
 
+// CreatePropertyAd godoc
+// @Summary      Criar anúncio imobiliário
+// @Description  Cria um novo anúncio com upload opcional de imagem (JPEG/PNG, máx 5MB)
+// @Tags         property-ads
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        type         formData string  true  "Tipo do anúncio: SALE ou RENT"
+// @Param        price_brl    formData number  true  "Preço em BRL (deve ser > 0)"
+// @Param        zip_code     formData string  true  "CEP (8 dígitos)"
+// @Param        street       formData string  true  "Logradouro"
+// @Param        number       formData string  true  "Número"
+// @Param        neighborhood formData string  true  "Bairro"
+// @Param        city         formData string  true  "Cidade"
+// @Param        state        formData string  true  "Estado (UF, 2 letras)"
+// @Param        complement   formData string  false "Complemento"
+// @Param        image        formData file    false "Imagem do imóvel (JPEG ou PNG, máx 5MB)"
+// @Success      201 {object} CreatePropertyAdOutput
+// @Failure      400 {object} json.ErrorResponse
+// @Failure      401 {object} json.ErrorResponse
+// @Failure      500 {object} json.ErrorResponse
+// @Security     BearerAuth
+// @Router       /property-ads [post]
 func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middlewares.UserIDContextKey).(uuid.UUID)
 	if !ok {
-		corejson.WriteError(w, http.StatusUnauthorized, coreerrors.ErrMissingToken)
+		json.WriteError(w, http.StatusUnauthorized, coreerrors.ErrMissingToken)
 		return
 	}
 
@@ -40,7 +62,7 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 	r.Body = http.MaxBytesReader(w, r.Body, maxImageSize+4096)
 	if err := r.ParseMultipartForm(maxImageSize); err != nil {
 		log.Println(err)
-		corejson.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
+		json.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
 		return
 	}
 
@@ -60,7 +82,7 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 	// Converte price_brl para float64
 	priceBrl, err := strconv.ParseFloat(req.PriceBrlStr, 64)
 	if err != nil {
-		corejson.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidPrice)
+		json.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidPrice)
 		return
 	}
 
@@ -72,7 +94,7 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 
 		// Verifica tamanho
 		if header.Size > maxImageSize {
-			corejson.WriteError(w, http.StatusBadRequest, coreerrors.ErrImageTooLarge)
+			json.WriteError(w, http.StatusBadRequest, coreerrors.ErrImageTooLarge)
 			return
 		}
 
@@ -81,12 +103,12 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 		n, err := file.Read(buf)
 		if err != nil && err != io.EOF {
 			log.Println(err)
-			corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+			json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 			return
 		}
 		contentType := http.DetectContentType(buf[:n])
 		if contentType != "image/jpeg" && contentType != "image/png" {
-			corejson.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidImageType)
+			json.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidImageType)
 			return
 		}
 
@@ -99,7 +121,7 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 		// Garante que o diretório de upload existe
 		if err := os.MkdirAll(h.uploadDir, 0755); err != nil {
 			log.Println(err)
-			corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+			json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 			return
 		}
 
@@ -109,26 +131,26 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 		dst, err := os.Create(destPath)
 		if err != nil {
 			log.Println(err)
-			corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+			json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 			return
 		}
 		defer dst.Close()
 
 		if _, err := dst.Write(buf[:n]); err != nil {
 			log.Println(err)
-			corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+			json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 			return
 		}
 		if _, err := io.Copy(dst, file); err != nil {
 			log.Println(err)
-			corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+			json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 			return
 		}
 
 		imagePath = fmt.Sprintf("/uploads/property_ads/%s", fileName)
 	} else if err != http.ErrMissingFile {
 		log.Println(err)
-		corejson.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
+		json.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
 		return
 	}
 
@@ -149,9 +171,9 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 		log.Println(err)
 		switch err {
 		case coreerrors.ErrInvalidAdType, coreerrors.ErrInvalidPrice, coreerrors.ErrMissingAddressField:
-			corejson.WriteError(w, http.StatusBadRequest, err)
+			json.WriteError(w, http.StatusBadRequest, err)
 		default:
-			corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+			json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 		}
 		return
 	}
@@ -165,14 +187,24 @@ func (h *PropertyAdHandler) CreatePropertyAd(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	corejson.Write(w, http.StatusCreated, output)
+	json.Write(w, http.StatusCreated, output)
 }
 
+// ListPropertyAds godoc
+// @Summary      Listar anúncios imobiliários
+// @Description  Retorna todos os anúncios ativos (soft delete não incluído). price_usd é nulo se não houver cotação ativa.
+// @Tags         property-ads
+// @Produce      json
+// @Success      200 {array}  PropertyAdItem
+// @Failure      401 {object} json.ErrorResponse
+// @Failure      500 {object} json.ErrorResponse
+// @Security     BearerAuth
+// @Router       /property-ads [get]
 func (h *PropertyAdHandler) ListPropertyAds(w http.ResponseWriter, r *http.Request) {
 	ads, err := h.u.ListPropertyAds(r.Context())
 	if err != nil {
 		log.Println(err)
-		corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+		json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 		return
 	}
 
@@ -196,14 +228,27 @@ func (h *PropertyAdHandler) ListPropertyAds(w http.ResponseWriter, r *http.Reque
 		ads[i].ImageData = &encoded
 	}
 
-	corejson.Write(w, http.StatusOK, ads)
+	json.Write(w, http.StatusOK, ads)
 }
 
+// DeletePropertyAd godoc
+// @Summary      Deletar anúncio imobiliário
+// @Description  Realiza soft delete do anúncio. Não remove o registro fisicamente do banco.
+// @Tags         property-ads
+// @Produce      json
+// @Param        id   path string true "UUID do anúncio" Format(uuid)
+// @Success      200
+// @Failure      400 {object} json.ErrorResponse
+// @Failure      401 {object} json.ErrorResponse
+// @Failure      404 {object} json.ErrorResponse
+// @Failure      500 {object} json.ErrorResponse
+// @Security     BearerAuth
+// @Router       /property-ads/{id} [delete]
 func (h *PropertyAdHandler) DeletePropertyAd(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		corejson.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
+		json.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
 		return
 	}
 
@@ -211,9 +256,9 @@ func (h *PropertyAdHandler) DeletePropertyAd(w http.ResponseWriter, r *http.Requ
 		log.Println(err)
 		switch err {
 		case coreerrors.ErrPropertyAdNotFound:
-			corejson.WriteError(w, http.StatusNotFound, err)
+			json.WriteError(w, http.StatusNotFound, err)
 		default:
-			corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+			json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 		}
 		return
 	}

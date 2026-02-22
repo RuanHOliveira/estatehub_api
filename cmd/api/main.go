@@ -1,3 +1,4 @@
+// Package main is the entry point of the EstateHub API.
 package main
 
 import (
@@ -5,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	_ "github.com/RuanHOliveira/estatehub_api/docs"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/config"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/security"
 	"github.com/RuanHOliveira/estatehub_api/internal/domain/auth"
@@ -16,6 +18,16 @@ import (
 	"github.com/RuanHOliveira/estatehub_api/internal/infra/viacep"
 	"github.com/RuanHOliveira/estatehub_api/internal/router"
 )
+
+// @title           EstateHub API
+// @version         1.0
+// @description     API REST para gerenciamento de anúncios imobiliários com autenticação JWT, upload de imagens e integração com ViaCEP.
+// @host            localhost:8080
+// @BasePath        /v1
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @description     Use o token retornado por /auth/login ou /auth/register. Formato: Bearer <token>
 
 func main() {
 	ctx := context.Background()

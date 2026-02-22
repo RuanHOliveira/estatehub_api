@@ -187,3 +187,35 @@ O endpoint `GET /v1/exchange-rates` retorna **todo o histórico**, incluindo cot
 ### Upload de imagens
 
 As imagens são armazenadas localmente no servidor. As respostas da API incluem o campo `image_data` com a imagem codificada em base64.
+
+---
+
+## 📘 Documentação Swagger
+
+A API possui documentação interativa gerada via [swaggo/swag](https://github.com/swaggo/swag).
+
+### Instalar o swag CLI
+
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
+### Regenerar documentação
+
+Execute a partir do diretório `estatehub_api/`:
+
+```bash
+swag init -g cmd/api/main.go --output docs
+```
+
+Execute este comando sempre que adicionar ou modificar endpoints.
+
+### Acessar a documentação
+
+Com a API em execução, acesse no navegador:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+Use o botão **Authorize** para inserir o token JWT (formato: `Bearer <token>`) e testar os endpoints protegidos diretamente pela interface.

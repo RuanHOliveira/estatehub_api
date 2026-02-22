@@ -7,8 +7,9 @@ import (
 	errors "github.com/RuanHOliveira/estatehub_api/internal/core/error"
 )
 
+// ErrorResponse é a resposta padrão para erros da API.
 type ErrorResponse struct {
-	ErrorCode string `json:"error_code"`
+	ErrorCode string `json:"error_code" example:"ErrUnknown"`
 }
 
 func Read(r *http.Request, data any) error {

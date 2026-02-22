@@ -16,6 +16,18 @@ func NewAuthHandler(u AuthUsecase) *AuthHandler {
 	return &AuthHandler{u: u}
 }
 
+// Register godoc
+// @Summary      Registrar novo usuário
+// @Description  Cria uma nova conta e retorna o token JWT de acesso
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body RegisterRequest true "Dados de registro"
+// @Success      201 {object} RegisterResponse
+// @Failure      400 {object} json.ErrorResponse
+// @Failure      409 {object} json.ErrorResponse
+// @Failure      500 {object} json.ErrorResponse
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.Read(r, &req); err != nil {
@@ -40,6 +52,19 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	json.Write(w, http.StatusCreated, RegisterResponse{User: output.User, AccessToken: output.AccessToken})
 }
 
+// Login godoc
+// @Summary      Autenticar usuário
+// @Description  Valida credenciais e retorna o token JWT de acesso
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body LoginRequest true "Credenciais de login"
+// @Success      200 {object} LoginResponse
+// @Failure      400 {object} json.ErrorResponse
+// @Failure      401 {object} json.ErrorResponse
+// @Failure      404 {object} json.ErrorResponse
+// @Failure      500 {object} json.ErrorResponse
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.Read(r, &req); err != nil {

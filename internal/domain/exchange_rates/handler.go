@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	coreerrors "github.com/RuanHOliveira/estatehub_api/internal/core/error"
-	corejson "github.com/RuanHOliveira/estatehub_api/internal/core/json"
+	"github.com/RuanHOliveira/estatehub_api/internal/core/json"
 	"github.com/RuanHOliveira/estatehub_api/internal/core/middlewares"
 	"github.com/google/uuid"
 )
@@ -19,23 +19,36 @@ func NewExchangeRateHandler(u ExchangeRateUsecase) *ExchangeRateHandler {
 	return &ExchangeRateHandler{u: u}
 }
 
+// CreateExchangeRate godoc
+// @Summary      Criar cotação de câmbio
+// @Description  Registra nova cotação BRL→USD. Inativa automaticamente todas as cotações anteriores.
+// @Tags         exchange-rates
+// @Accept       json
+// @Produce      json
+// @Param        request body CreateExchangeRateRequest true "Dados da cotação"
+// @Success      201 {object} CreateExchangeRateOutput
+// @Failure      400 {object} json.ErrorResponse
+// @Failure      401 {object} json.ErrorResponse
+// @Failure      500 {object} json.ErrorResponse
+// @Security     BearerAuth
+// @Router       /exchange-rates [post]
 func (h *ExchangeRateHandler) CreateExchangeRate(w http.ResponseWriter, r *http.Request) {
 	var req CreateExchangeRateRequest
-	if err := corejson.Read(r, &req); err != nil {
+	if err := json.Read(r, &req); err != nil {
 		log.Println(err)
-		corejson.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
+		json.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
 		return
 	}
 
 	userID, ok := r.Context().Value(middlewares.UserIDContextKey).(uuid.UUID)
 	if !ok {
-		corejson.WriteError(w, http.StatusUnauthorized, coreerrors.ErrMissingToken)
+		json.WriteError(w, http.StatusUnauthorized, coreerrors.ErrMissingToken)
 		return
 	}
 
 	rate, err := strconv.ParseFloat(req.RateStr, 64)
 	if err != nil {
-		corejson.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
+		json.WriteError(w, http.StatusBadRequest, coreerrors.ErrInvalidRequest)
 		return
 	}
 
@@ -44,21 +57,31 @@ func (h *ExchangeRateHandler) CreateExchangeRate(w http.ResponseWriter, r *http.
 		log.Println(err)
 		switch err {
 		case coreerrors.ErrInvalidRate:
-			corejson.WriteError(w, http.StatusBadRequest, err)
+			json.WriteError(w, http.StatusBadRequest, err)
 		default:
-			corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+			json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 		}
 		return
 	}
 
-	corejson.Write(w, http.StatusCreated, output)
+	json.Write(w, http.StatusCreated, output)
 }
 
+// ListAllExchangeRates godoc
+// @Summary      Listar cotações de câmbio
+// @Description  Retorna o histórico completo de cotações, incluindo inativas (deleted_at != null). A cotação ativa possui deleted_at nulo.
+// @Tags         exchange-rates
+// @Produce      json
+// @Success      200 {array}  ExchangeRateItem
+// @Failure      401 {object} json.ErrorResponse
+// @Failure      500 {object} json.ErrorResponse
+// @Security     BearerAuth
+// @Router       /exchange-rates [get]
 func (h *ExchangeRateHandler) ListAllExchangeRates(w http.ResponseWriter, r *http.Request) {
 	ers, err := h.u.ListAllExchangeRates(r.Context())
 	if err != nil {
 		log.Println(err)
-		corejson.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
+		json.WriteError(w, http.StatusInternalServerError, coreerrors.ErrUnknown)
 		return
 	}
 
@@ -66,5 +89,5 @@ func (h *ExchangeRateHandler) ListAllExchangeRates(w http.ResponseWriter, r *htt
 		ers = []ExchangeRateItem{}
 	}
 
-	corejson.Write(w, http.StatusOK, ers)
+	json.Write(w, http.StatusOK, ers)
 }
