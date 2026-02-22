@@ -194,22 +194,6 @@ As imagens são armazenadas localmente no servidor. As respostas da API incluem 
 
 A API possui documentação interativa gerada via [swaggo/swag](https://github.com/swaggo/swag).
 
-### Instalar o swag CLI
-
-```bash
-go install github.com/swaggo/swag/cmd/swag@latest
-```
-
-### Regenerar documentação
-
-Execute a partir do diretório `estatehub_api/`:
-
-```bash
-swag init -g cmd/api/main.go --output docs
-```
-
-Execute este comando sempre que adicionar ou modificar endpoints.
-
 ### Acessar a documentação
 
 Com a API em execução, acesse no navegador:
